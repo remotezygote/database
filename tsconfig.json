@@ -1,0 +1,27 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"target": "es2015",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": false,
+		"outDir": "./dist",
+		"sourceMap": true,
+		"paths": {
+			"@warder/*": [
+				"../../api/lib/*"
+			]
+		}
+	},
+	"include": [
+		"./*.ts",
+		"logger/*.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"**/*.spec.ts"
+	]
+}

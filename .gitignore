@@ -1,0 +1,21 @@
+certs/
+node_modules/
+.cache/
+dist/
+.secrets
+.garden/
+error.log
+yarn-error.log
+.DS_Store
+# Local .terraform directories
+**/.terraform/*
+# .tfstate files
+*.tfstate
+*.tfstate.*
+infra/garden.tfvars.json
+infra/kubeconfig.yaml
+*.keystore
+clients/mobile/*/*
+tmp/
+secrets.yml
+.parcel-cache/

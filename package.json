@@ -1,0 +1,25 @@
+{
+	"name": "@remotezygote/database",
+	"version": "1.0.0",
+	"description": "Database connector for PG",
+	"main": "dist/database.js",
+	"author": "John Bragg",
+	"license": "MIT",
+	"scripts": {
+		"build": "esbuild index.ts --platform=node --packages=external --bundle --minify --outfile=dist/database.js",
+		"postinstall": "yarn build"
+	},
+	"files": [
+		"./dist"
+	],
+	"devDependencies": {
+		"@types/node": "^18.7.14",
+		"dotenv": "^16.0.2",
+		"typescript": "^4.8.2"
+	},
+	"dependencies": {
+		"esbuild": "^0.16.13",
+		"pg": "^8.8.0",
+		"pg-native": "^3.0.1"
+	}
+}
