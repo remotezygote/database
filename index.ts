@@ -22,9 +22,12 @@ export const query = (text, params = [], callback = undefined as Function | unde
 	return pool.query(text, params, callback)
 }
 
-export const listen = async (queue, onMessage) => {
+export const listen = async (queue, onMessage, exclusive = true) => {
 	try {
 		const client = await pool.connect()
+		if (exclusive) {
+			client.query(`SELECT pg_advisory_lock('listen-${queue}')`)
+		}
 		client.query(`LISTEN ${queue}`)
 		client.on('notification', ({ channel, payload }) => {
 			if (channel === queue) {
@@ -33,6 +36,9 @@ export const listen = async (queue, onMessage) => {
 		})
 		return () => {
 			client.query(`UNLISTEN ${queue}`)
+			if (exclusive) {
+				client.query(`SELECT pg_advisory_unlock('listen-${queue}')`)
+			}
 			client.release()
 		}
 	} catch (e) {
