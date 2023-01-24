@@ -1,6 +1,6 @@
 {
 	"name": "@remotezygote/database",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Database connector for PG",
 	"main": "dist/database.js",
 	"author": "John Bragg",
