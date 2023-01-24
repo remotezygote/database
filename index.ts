@@ -26,7 +26,11 @@ export const listen = async (queue, onMessage) => {
 	try {
 		const client = await pool.connect()
 		client.query(`LISTEN ${queue}`)
-		client.on('notification', onMessage)
+		client.on('notification', ({ channel, payload }) => {
+			if (channel === queue) {
+				onMessage(JSON.parse(payload))
+			}
+		})
 		return () => {
 			client.query(`UNLISTEN ${queue}`)
 			client.release()
