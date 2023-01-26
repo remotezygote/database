@@ -26,7 +26,7 @@ export const listen = async (queue, onMessage, exclusive = true) => {
 	try {
 		const client = await pool.connect()
 		if (exclusive) {
-			client.query(`SELECT pg_advisory_lock('listen-${queue}')`)
+			client.query(`SELECT pg_advisory_lock(('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint)`)
 		}
 		client.query(`LISTEN ${queue}`)
 		client.on('notification', ({ channel, payload }) => {
@@ -37,7 +37,7 @@ export const listen = async (queue, onMessage, exclusive = true) => {
 		return () => {
 			client.query(`UNLISTEN ${queue}`)
 			if (exclusive) {
-				client.query(`SELECT pg_advisory_unlock('listen-${queue}')`)
+				client.query(`SELECT pg_advisory_unlock(('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint)`)
 			}
 			client.release()
 		}
