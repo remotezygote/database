@@ -1,4 +1,4 @@
-import pg from 'pg'
+import pg, { QueryResult } from 'pg'
 
 const { Pool } = pg.native
 const connectionString = process.env.DATABASE_URL
@@ -18,9 +18,9 @@ export const withDatabaseClient = async (func) => {
 	}
 }
 
-export const query = (text, params = [], callback = undefined as Function | undefined) => {
-	return pool.query(text, params, callback)
-}
+
+export const query = (text: string, params: string[] = [], callback: Function | undefined = undefined): Promise<QueryResult> => 
+	pool.query(text, params, callback)
 
 export const listen = async (queue, onMessage, exclusive = true) => {
 	try {
