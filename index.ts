@@ -19,7 +19,7 @@ export const withDatabaseClient = async (func) => {
 }
 
 
-export const query = (text: string, params: string[] = [], callback: Function | undefined = undefined): Promise<QueryResult> => 
+export const query = (text: string, params: any[] = [], callback: Function | undefined = undefined): Promise<QueryResult> => 
 	pool.query(text, params, callback)
 
 export const listen = async (queue, onMessage, exclusive = true) => {
