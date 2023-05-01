@@ -19,10 +19,10 @@ export const withDatabaseClient = async (func) => {
 }
 
 
-export const query = (text: string, params: any[] = [], callback: Function | undefined = undefined): Promise<QueryResult> => 
-	pool.query(text, params, callback)
+export const query = (text: string, params: any[] = []): Promise<QueryResult> => 
+	pool.query(text, params)
 
-export const listen = async (queue, onMessage, exclusive = true) => {
+export const listen = async (queue: string, onMessage: Function, exclusive: boolean = true) => {
 	try {
 		const client = await pool.connect()
 		if (exclusive) {
@@ -34,13 +34,15 @@ export const listen = async (queue, onMessage, exclusive = true) => {
 				onMessage(JSON.parse(payload))
 			}
 		})
-		return () => {
+		const stopper = () => {
 			client.query(`UNLISTEN ${queue}`)
 			if (exclusive) {
 				client.query(`SELECT pg_advisory_unlock(('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint)`)
 			}
 			client.release()
 		}
+		process.on('SIGTERM', stopper)
+		return stopper
 	} catch (e) {
 		console.error(e)
 	}
