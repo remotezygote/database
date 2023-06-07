@@ -1,6 +1,6 @@
 import pg, { QueryResult } from 'pg'
 
-const { Pool } = pg.native
+const { Pool } = process.env.USE_NATIVE_PG !== 'false' ? pg.native : pg
 const connectionString = process.env.DATABASE_URL
 
 export const pool = new Pool({ connectionString })
@@ -25,7 +25,7 @@ type Callback = (err: Error, result: QueryResult<any>) => void
 export const queryWithCallback = async (text: string, params: any[] = [], callback: Callback | undefined = undefined): Promise<void> => 
 	await pool.query(text, params, callback)
 
-export const listen = async (queue: string, onMessage: Function, exclusive = true) => {
+export const listen = async (queue: string, onMessage: Function, exclusive: boolean = true) => {
 	try {
 		const client = await pool.connect()
 		if (exclusive) {
@@ -37,13 +37,15 @@ export const listen = async (queue: string, onMessage: Function, exclusive = tru
 				onMessage(JSON.parse(payload))
 			}
 		})
-		return () => {
+		const stopper = () => {
 			client.query(`UNLISTEN ${queue}`)
 			if (exclusive) {
 				client.query(`SELECT pg_advisory_unlock(('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint)`)
 			}
 			client.release()
 		}
+		process.on('SIGTERM', stopper)
+		return stopper
 	} catch (e) {
 		console.error(e)
 	}
