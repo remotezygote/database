@@ -5,7 +5,7 @@ const connectionString = process.env.DATABASE_URL
 
 export const pool = new Pool({ connectionString })
 
-export const withDatabaseClient = async (func) => {
+export const withDatabaseClient = async (func: Function) => {
 	try {
 		const client = await pool.connect()
 		try {
@@ -18,11 +18,14 @@ export const withDatabaseClient = async (func) => {
 	}
 }
 
+export const query = async (text: string, params: any[] = []): Promise<QueryResult> => 
+	await pool.query(text, params)
 
-export const query = (text: string, params: any[] = [], callback: Function | undefined = undefined): Promise<QueryResult> => 
-	pool.query(text, params, callback)
+type Callback = (err: Error, result: QueryResult<any>) => void
+export const queryWithCallback = async (text: string, params: any[] = [], callback: Callback | undefined = undefined): Promise<void> => 
+	await pool.query(text, params, callback)
 
-export const listen = async (queue, onMessage, exclusive = true) => {
+export const listen = async (queue: string, onMessage: Function, exclusive = true) => {
 	try {
 		const client = await pool.connect()
 		if (exclusive) {
