@@ -8,7 +8,7 @@ const getUserData = async email => {
   return rows && row[0]
 }
 
-const updateWithTransaction = async updates => {
+const multipleQueriesWithClient = async updates => {
   const { email, data } = updates
   return await withDatabaseClient(async client => {
     const { rows } = await client.query(
@@ -20,6 +20,74 @@ const updateWithTransaction = async updates => {
       'updated'
     ])
   })
+}
+
+const queryWithTransaction = async updates => {
+  const { email, data } = updates
+  const { commit } = await withTransaction(
+    async client => {
+      const { rows } = await client.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      )
+      await client.query('INSERT INTO user_log (email, item) VALUES ($1, $2)', [
+        email,
+        'updated'
+      ])
+    },
+    { autoCommit: false }
+  )
+  return await commit()
+}
+
+const queryWithAutoCommit = async updates => {
+  const { email, data } = updates
+  return await withTransaction(async client => {
+    const { rows } = await client.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    )
+    await client.query('INSERT INTO user_log (email, item) VALUES ($1, $2)', [
+      email,
+      'updated'
+    ])
+  })
+  return await rollback()
+}
+
+const queryWithRollback = async updates => {
+  const { email, data } = updates
+  const { rollback } = await withTransaction(
+    async client => {
+      const { rows } = await client.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      )
+      await client.query('INSERT INTO user_log (email, item) VALUES ($1, $2)', [
+        email,
+        'updated'
+      ])
+    },
+    { autoCommit: false }
+  )
+  return await rollback()
+}
+
+const queryWithAutoRollback = async updates => {
+  const { email, data } = updates
+  return await withTransaction(
+    async client => {
+      const { rows } = await client.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      )
+      await client.query('INSERT INTO user_log (email, item) VALUES ($1, $2)', [
+        email,
+        'updated'
+      ])
+    },
+    { autoRollback: true }
+  )
 }
 
 const processJob = async job => {

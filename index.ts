@@ -39,7 +39,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 			} else {
 				return {
 					returnValue,
-					commit: () => {
+					commit: async () => {
 						try {
 							client.query('COMMIT')
 							return returnValue
@@ -50,7 +50,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 							client.release()
 						}
 					},
-					rollback: () => {
+					rollback: async () => {
 						try {
 							client.query('ROLLBACK')
 							return returnValue
