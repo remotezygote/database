@@ -7,6 +7,9 @@
   "author": "John Bragg",
   "license": "MIT",
   "types": "dist/database.d.ts",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "prepare": "yarn build",
     "build": "parcel build"
