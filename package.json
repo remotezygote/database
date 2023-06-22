@@ -1,6 +1,6 @@
 {
   "name": "@remotezygote/database",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Database connector for PG",
   "main": "dist/database.js",
   "source": "index.ts",
