@@ -2,11 +2,12 @@
   "name": "@remotezygote/database",
   "version": "1.2.2",
   "description": "Database connector for PG",
-  "main": "dist/database.js",
+  "main": "dist/main.js",
   "source": "index.ts",
+  "module": "dist/module.js",
   "author": "John Bragg",
   "license": "MIT",
-  "types": "dist/database.d.ts",
+  "types": "dist/main.d.ts",
   "engines": {
     "node": ">=14.0.0"
   },
