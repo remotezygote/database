@@ -28,10 +28,11 @@ export const queryWithCallback = async (text: string, params: any[] = [], callba
 	await pool.query(text, params, callback)
 
 export const listen = async (queue: string, onMessage: Function, exclusive: boolean = true) => {
+	const lockName = `('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint`
 	try {
 		const client = await pool.connect()
 		if (exclusive) {
-			client.query(`SELECT pg_advisory_lock(('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint)`)
+			client.query(`SELECT pg_advisory_lock(${lockName})`)
 		}
 		client.query(`LISTEN ${queue}`)
 		client.on('notification', ({ channel, payload }) => {
@@ -42,11 +43,16 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 		const stopper = () => {
 			client.query(`UNLISTEN ${queue}`)
 			if (exclusive) {
-				client.query(`SELECT pg_advisory_unlock(('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint)`)
+				client.query(`SELECT pg_advisory_unlock(${lockName})`)
 			}
 			client.release()
 		}
 		process.on('SIGTERM', stopper)
+		client.on('error', e => {
+			console.error(e)
+			stopper()
+			process.exit(1)
+		})
 		return stopper
 	} catch (e) {
 		console.error(e)
