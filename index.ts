@@ -1,6 +1,8 @@
 import pg, { QueryResult } from 'pg'
 
-const { Pool } = process.env.USE_NATIVE_PG !== 'false' ? pg.native : pg
+const { native } = pg
+const Pool = ((process.env.USE_NATIVE_PG !== 'false' && native) || pg).Pool
+
 const connectionString = process.env.DATABASE_URL
 
 export const pool = new Pool({ connectionString })
