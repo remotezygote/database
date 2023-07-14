@@ -9,19 +9,10 @@
 		"forceConsistentCasingInFileNames": true,
 		"strict": false,
 		"outDir": "./dist",
-		"sourceMap": true,
-		"paths": {
-			"@warder/*": [
-				"../../api/lib/*"
-			]
-		}
+		"sourceMap": true
 	},
-	"include": [
-		"./*.ts",
-		"logger/*.ts"
-	],
+	"include": ["src/index.ts"],
 	"exclude": [
-		"node_modules",
-		"**/*.spec.ts"
+		"node_modules"
 	]
 }
