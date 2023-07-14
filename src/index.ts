@@ -7,6 +7,11 @@ const connectionString = process.env.DATABASE_URL
 
 export const pool = new Pool({ connectionString })
 
+pool.on('error', (err, client) => {
+	console.error(err)
+	process.exit(-1)
+})
+
 export const withDatabaseClient = async (func: Function) => {
 	try {
 		const client = await pool.connect()
@@ -57,7 +62,7 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 			console.error(err)
 		} finally {
 			console.log('Exiting process...')
-			process.exit(1)
+			process.exit(-1)
 		}
 	})
 	return stopper
