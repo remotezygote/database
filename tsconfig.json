@@ -3,7 +3,7 @@
 		"baseUrl": ".",
 		"target": "es2015",
 		"module": "commonjs",
-		"moduleResolution": "node",
+		"moduleResolution": "nodenext",
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
