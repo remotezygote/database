@@ -56,6 +56,7 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 		} catch (err) {
 			console.error(err)
 		} finally {
+			console.log('Exiting process...')
 			process.exit(1)
 		}
 	})
