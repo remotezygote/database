@@ -52,7 +52,6 @@ const queryWithAutoCommit = async updates => {
       'updated'
     ])
   })
-  return await rollback()
 }
 
 const queryWithRollback = async updates => {
