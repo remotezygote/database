@@ -31,7 +31,6 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "pg": "^8.8.0",
-    "pg-native": "^3.0.1"
+    "pg": "^8.8.0"
   }
 }

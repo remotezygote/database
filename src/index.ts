@@ -1,7 +1,4 @@
-import pg, { QueryResult } from 'pg'
-
-const { native } = pg
-const Pool = ((process.env.USE_NATIVE_PG !== 'false' && native) || pg).Pool
+import { Pool, QueryResult } from 'pg'
 
 const connectionString = process.env.DATABASE_URL
 
