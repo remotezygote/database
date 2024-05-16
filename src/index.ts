@@ -1,7 +1,4 @@
-import pg, { QueryResult } from 'pg'
-
-const { native } = pg
-const Pool = ((process.env.USE_NATIVE_PG !== 'false' && native) || pg).Pool
+import { Pool, QueryResult } from 'pg'
 
 const connectionString = process.env.DATABASE_URL
 
@@ -13,15 +10,11 @@ pool.on('error', (err, client) => {
 })
 
 export const withDatabaseClient = async (func: Function) => {
+	const client = await pool.connect()
 	try {
-		const client = await pool.connect()
-		try {
-			return await func(client)
-		} finally {
-			client.release()
-		}
-	} catch (e) {
-		console.error(e)
+		return await func(client)
+	} finally {
+		client.release()
 	}
 }
 
@@ -76,11 +69,11 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 	}
 }
 
-export const query = async (text: string, params: any[] = []): Promise<QueryResult> => 
+export const query = async (text: string, params: any[] = []): Promise<QueryResult> =>
 	await pool.query(text, params)
 
 type Callback = (err: Error, result: QueryResult<any>) => void
-export const queryWithCallback = async (text: string, params: any[] = [], callback: Callback | undefined = undefined): Promise<void> => 
+export const queryWithCallback = async (text: string, params: any[] = [], callback: Callback | undefined = undefined): Promise<void> =>
 	await pool.query(text, params, callback)
 
 export const listen = async (queue: string, onMessage: Function, exclusive: boolean = true) => {
