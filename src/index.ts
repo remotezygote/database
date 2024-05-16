@@ -18,6 +18,57 @@ export const withDatabaseClient = async (func: Function) => {
 	}
 }
 
+export interface WithTransactionOptions {
+	autoCommit?: boolean
+	autoRollback?: boolean
+}
+
+export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false }) => {
+	const { autoCommit, autoRollback } = options
+	const client = await pool.connect()
+	client.query('BEGIN')
+	let returnValue
+	try {
+		returnValue = await func(client)
+	} finally {
+		if (autoRollback) {
+			client.query('ROLLBACK')
+			client.release()
+			return { returnValue }
+		} else if (autoCommit) {
+			client.query('COMMIT')
+			client.release()
+			return { returnValue }
+		} else {
+			client.release()
+			return {
+				returnValue,
+				commit: async () => {
+					try {
+						client.query('COMMIT')
+						return returnValue
+					} catch (e) {
+						client.query('ROLLBACK')
+						throw e
+					} finally {
+						client.release()
+					}
+				},
+				rollback: async () => {
+					try {
+						client.query('ROLLBACK')
+						return returnValue
+					} catch (e) {
+						throw e
+					} finally {
+						client.release()
+					}
+				}
+			}
+		}
+	}
+}
+
 export const query = async (text: string, params: any[] = []): Promise<QueryResult> =>
 	await pool.query(text, params)
 
