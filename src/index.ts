@@ -83,7 +83,7 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 		await client.query(`SELECT pg_advisory_lock(${lockName})`)
 	}
 	console.log(`Listening to ${queue}...`)
-	await client.query(`LISTEN ${queue}`)
+	await client.query(`LISTEN "${queue}"`)
 	client.on('notification', ({ channel, payload }) => {
 		if (channel === queue) {
 			onMessage(JSON.parse(payload))
