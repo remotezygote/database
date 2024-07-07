@@ -1,6 +1,6 @@
 {
   "name": "@remotezygote/database",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "description": "Database connector for PG",
   "main": "./dist/index.js",
   "source": "./src/index.ts",
@@ -19,6 +19,7 @@
   "scripts": {
     "lint": "tsc --project tsconfig.json --noEmit",
     "prepare": "yarn build",
+    "release": "standard-version",
     "build": "nanobundle build --tsconfig=./tsconfig.json --platform=node --out-dir=./dist --clean"
   },
   "files": [
