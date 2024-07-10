@@ -93,11 +93,14 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 		}
 	})
 	const stopper = async () => {
+		console.log(`Stopping listening to ${queue}...`)
 		await client.query(`UNLISTEN ${queue}`)
 		if (exclusive) {
 			await client.query(`SELECT pg_advisory_unlock(${lockName})`)
 		}
-		client.release()
+		console.log(`Releasing client for ${queue}...`)
+		client.release(true)
+		console.log(`Listener stopped for ${queue}...`)
 	}
 	process.on('SIGTERM', stopper)
 	client.on('error', e => {
