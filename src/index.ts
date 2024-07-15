@@ -79,7 +79,21 @@ type Callback = (err: Error, result: QueryResult<any>) => void
 export const queryWithCallback = async (text: string, params: any[] = [], callback: Callback | undefined = undefined): Promise<void> =>
 	await pool.query(text, params, callback)
 
-export const listen = async (queue: string, onMessage: Function, exclusive: boolean = true) => {
+const listenerStoppers = []
+
+const termStopper = () => {
+	listenerStoppers.forEach(async stopper => {
+		try {
+			await stopper()
+		} catch (err) {
+			console.error(err)
+		}
+	})
+}
+
+process.on('SIGTERM', termStopper)
+
+export const listen = async (queue: string, onMessage: Function, { exclusive = true, parseJSON = true } = { exclusive: true, parseJSON: true }) => {
 	const lockName = `('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint`
 	const client = await pool.connect()
 	if (exclusive) {
@@ -89,7 +103,7 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 	await client.query(`LISTEN "${queue}"`)
 	client.on('notification', ({ channel, payload }) => {
 		if (channel === queue) {
-			onMessage(JSON.parse(payload))
+			onMessage(parseJSON ? JSON.parse(payload) : payload)
 		}
 	})
 	const stopper = async () => {
@@ -98,8 +112,11 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 		if (exclusive) {
 			await lockClient.query(`SELECT pg_advisory_unlock(${lockName})`)
 		}
+		listenerStoppers.splice(listenerStoppers.indexOf(stopper), 1)
 	}
-	process.on('SIGTERM', stopper)
+
+	listenerStoppers.push(stopper)
+
 	client.on('error', e => {
 		console.error('Database client error')
 		console.error(e)
@@ -108,8 +125,7 @@ export const listen = async (queue: string, onMessage: Function, exclusive: bool
 		} catch (err) {
 			console.error(err)
 		} finally {
-			console.log('Exiting process...')
-			process.exit(-1)
+			throw new Error('Database client error')
 		}
 	})
 	return stopper
