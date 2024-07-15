@@ -93,7 +93,12 @@ const termStopper = () => {
 
 process.on('SIGTERM', termStopper)
 
-export const listen = async (queue: string, onMessage: Function, { exclusive = true, parseJSON = true } = { exclusive: true, parseJSON: true }) => {
+interface ListenOptions {
+	exclusive?: boolean
+	parseJSON?: boolean
+}
+
+export const listen = async (queue: string, onMessage: Function, { exclusive = true, parseJSON = true }: ListenOptions = { exclusive: true, parseJSON: true }) => {
 	const lockName = `('x'||substr(md5('listen-${queue}'),1,16))::bit(64)::bigint`
 	const client = await pool.connect()
 	if (exclusive) {
