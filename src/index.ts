@@ -114,9 +114,7 @@ export const listen = async (queue: string, onMessage: Function, { exclusive = t
 	const stopper = async () => {
 		client.release(true)
 		if (exclusive) {
-			const lockClient = await pool.connect()
-			await lockClient.query(`SELECT pg_advisory_unlock(${lockName})`)
-			lockClient.release()
+			await query(`SELECT pg_advisory_unlock(${lockName})`)
 		}
 		listenerStoppers.splice(listenerStoppers.indexOf(stopper), 1)
 	}
