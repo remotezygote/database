@@ -61,17 +61,31 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 	let returnValue
 	try {
 		returnValue = await func(client)
+	} catch (e) {
+		try {
+			await rollback(client, transactionId)
+		} catch (e) {
+			console.error(e)
+		} finally {
+			client.release()
+		}
+		throw e
 	} finally {
 		if (autoRollback) {
-			await rollback(client, transactionId)
-			client.release()
+			try {
+				await rollback(client, transactionId)
+			} finally {
+				client.release()
+			}
 			return { returnValue }
 		} else if (autoCommit) {
-			await commit(client, transactionId)
-			client.release()
+			try {
+				await commit(client, transactionId)
+			} finally {
+				client.release()
+			}
 			return { returnValue }
 		} else {
-			client.release()
 			return {
 				returnValue,
 				commit: async () => {
