@@ -29,7 +29,13 @@ export interface WithTransactionOptions {
 export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false }) => {
 	const { autoCommit, autoRollback } = options
 	const client = await pool.connect()
-	client.query('BEGIN')
+	await client.query('CREATE TEMPORARY TABLE a (b int) ON COMMIT DROP')
+	let inTransaction = false
+	const { rows } = await client.query('SELECT pg_current_xact_id_if_assigned() IS NOT NULL AS is_transaction')
+	if (!rows[0].is_transaction) {
+		inTransaction = true
+	}
+	client.query(inTransaction ? 'SAVEPOINT' : 'BEGIN')
 	let returnValue
 	try {
 		returnValue = await func(client)
