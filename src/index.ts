@@ -39,7 +39,7 @@ export const rollback = async (client: pg.PoolClient, inTransaction: boolean | s
 }
 
 export const inTransaction = async (client: pg.PoolClient) => {
-	await client.query('CREATE TEMPORARY TABLE a (b int) ON COMMIT DROP')
+	await client.query('CREATE TEMPORARY TABLE IF NOT EXISTS a (b int) ON COMMIT DROP')
 
 	const { rows } = await client.query(
 		`SELECT 
