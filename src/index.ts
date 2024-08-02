@@ -24,6 +24,7 @@ export const withDatabaseClient = async (func: Function) => {
 export interface WithTransactionOptions {
 	autoCommit?: boolean
 	autoRollback?: boolean
+	timeout?: number
 }
 
 export const begin = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
@@ -51,8 +52,8 @@ export const inTransaction = async (client: pg.PoolClient) => {
 	return inTransaction ? transactionId : false
 }
 
-export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false }) => {
-	const { autoCommit, autoRollback } = options
+export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false, timeout: 2000 }) => {
+	const { autoCommit, autoRollback, timeout } = options
 	const client = await pool.connect()
 
 	const transactionId = await inTransaction(client)
@@ -86,26 +87,34 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 			}
 			return { returnValue }
 		} else {
+			const timeOut = setTimeout(() => {
+				client.release()
+				throw new Error('Transaction timed out')
+			}, timeout)
 			return {
 				returnValue,
 				commit: async () => {
 					try {
 						await commit(client, transactionId)
+						clearTimeout(timeOut)
 						return returnValue
 					} catch (e) {
 						await rollback(client, transactionId)
 						throw e
 					} finally {
+						clearTimeout(timeOut)
 						client.release()
 					}
 				},
 				rollback: async () => {
 					try {
 						await rollback(client, transactionId)
+						clearTimeout(timeOut)
 						return returnValue
 					} catch (e) {
 						throw e
 					} finally {
+						clearTimeout(timeOut)
 						client.release()
 					}
 				}
