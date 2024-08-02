@@ -26,26 +26,43 @@ export interface WithTransactionOptions {
 	autoRollback?: boolean
 }
 
+export const begin = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
+	client.query(inTransaction ? `SAVEPOINT ${inTransaction}` : 'BEGIN')
+}
+
+export const commit = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
+	client.query(inTransaction ? `RELEASE SAVEPOINT ${inTransaction}` : 'COMMIT')
+}
+
+export const rollback = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
+	client.query(inTransaction ? `ROLLBACK TO SAVEPOINT ${inTransaction}` : 'ROLLBACK')
+}
+
+export const inTransaction = async (client: pg.PoolClient) => {
+	await client.query('CREATE TEMPORARY TABLE a (b int) ON COMMIT DROP')
+	const { rows } = await client.query('SELECT pg_current_xact_id_if_assigned() IS NOT NULL AS in_transaction, gen_random_uuid() AS transaction_id')
+	const { in_transaction, transaction_id } = rows[0]
+	
+	return in_transaction ? transaction_id : false
+}
+
 export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false }) => {
 	const { autoCommit, autoRollback } = options
 	const client = await pool.connect()
-	await client.query('CREATE TEMPORARY TABLE a (b int) ON COMMIT DROP')
-	let inTransaction = false
-	const { rows } = await client.query('SELECT pg_current_xact_id_if_assigned() IS NOT NULL AS is_transaction')
-	if (!rows[0].is_transaction) {
-		inTransaction = true
-	}
-	client.query(inTransaction ? 'SAVEPOINT' : 'BEGIN')
+
+	const transactionId = await inTransaction(client)
+
+	await begin(client, transactionId)
 	let returnValue
 	try {
 		returnValue = await func(client)
 	} finally {
 		if (autoRollback) {
-			client.query('ROLLBACK')
+			await rollback(client, transactionId)
 			client.release()
 			return { returnValue }
 		} else if (autoCommit) {
-			client.query('COMMIT')
+			await commit(client, transactionId)
 			client.release()
 			return { returnValue }
 		} else {
@@ -54,10 +71,10 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 				returnValue,
 				commit: async () => {
 					try {
-						client.query('COMMIT')
+						await commit(client, transactionId)
 						return returnValue
 					} catch (e) {
-						client.query('ROLLBACK')
+						await rollback(client, transactionId)
 						throw e
 					} finally {
 						client.release()
@@ -65,7 +82,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 				},
 				rollback: async () => {
 					try {
-						client.query('ROLLBACK')
+						await rollback(client, transactionId)
 						return returnValue
 					} catch (e) {
 						throw e
