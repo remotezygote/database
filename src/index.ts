@@ -40,10 +40,15 @@ export const rollback = async (client: pg.PoolClient, inTransaction: boolean | s
 
 export const inTransaction = async (client: pg.PoolClient) => {
 	await client.query('CREATE TEMPORARY TABLE a (b int) ON COMMIT DROP')
-	const { rows } = await client.query('SELECT pg_current_xact_id_if_assigned() IS NOT NULL AS in_transaction, gen_random_uuid() AS transaction_id')
-	const { in_transaction, transaction_id } = rows[0]
+
+	const { rows } = await client.query(
+		`SELECT 
+			pg_current_xact_id_if_assigned() IS NOT NULL AS inTransaction,
+			replace(gen_random_uuid()::text, '-', '_') AS transactionId`
+	)
+	const { inTransaction, transactionId } = rows[0]
 	
-	return in_transaction ? transaction_id : false
+	return inTransaction ? transactionId : false
 }
 
 export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false }) => {
