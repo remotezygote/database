@@ -47,7 +47,7 @@ export const inTransaction = async (client: pg.PoolClient) => {
 			pg_current_xact_id_if_assigned() IS NOT NULL AS inTransaction,
 			replace(gen_random_uuid()::text, '-', '_') AS transactionId`
 	)
-	const { inTransaction, transactionId } = rows[0]
+	const { intransaction: inTransaction, transactionid: transactionId } = rows[0]
 	
 	return inTransaction ? transactionId : false
 }
