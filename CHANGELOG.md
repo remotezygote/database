@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.18-alpha.4](https://github.com/remotezygote/database/compare/v1.2.18-alpha.3...v1.2.18-alpha.4) (2024-08-06)
+
 ### [1.2.18-alpha.3](https://github.com/remotezygote/database/compare/v1.2.18-alpha.2...v1.2.18-alpha.3) (2024-08-05)
 
 ### [1.2.18-alpha.2](https://github.com/remotezygote/database/compare/v1.2.18-alpha.1...v1.2.18-alpha.2) (2024-08-02)
