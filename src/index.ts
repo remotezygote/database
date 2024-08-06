@@ -21,50 +21,109 @@ export const withDatabaseClient = async (func: Function) => {
 	}
 }
 
+export const releaseClient = (client: pg.PoolClient, clientReleased: boolean = false) => {
+	if (!clientReleased) {
+		client.release()
+		clientReleased = true
+	}
+	return clientReleased
+}
+
 export interface WithTransactionOptions {
 	autoCommit?: boolean
 	autoRollback?: boolean
+	timeout?: number
 }
 
-export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false }) => {
-	const { autoCommit, autoRollback } = options
+export const begin = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
+	client.query(inTransaction ? `SAVEPOINT ${inTransaction}` : 'BEGIN')
+}
+
+export const commit = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
+	client.query(inTransaction ? `RELEASE SAVEPOINT ${inTransaction}` : 'COMMIT')
+}
+
+export const rollback = async (client: pg.PoolClient, inTransaction: boolean | string = false) => {
+	client.query(inTransaction ? `ROLLBACK TO SAVEPOINT ${inTransaction}` : 'ROLLBACK')
+}
+
+export const inTransaction = async (client: pg.PoolClient) => {
+	await client.query('CREATE TEMPORARY TABLE IF NOT EXISTS a (b int) ON COMMIT DROP')
+
+	const { rows } = await client.query(
+		`SELECT 
+			pg_current_xact_id_if_assigned() IS NOT NULL AS inTransaction,
+			'trx_' || replace(gen_random_uuid()::text, '-', '_') AS transactionId`
+	)
+	const { intransaction: inTransaction, transactionid: transactionId } = rows[0]
+	
+	return inTransaction ? transactionId : false
+}
+
+export const withTransaction = async (func: Function, options: WithTransactionOptions = { autoCommit: true, autoRollback: false, timeout: 2000 }) => {
+	const { autoCommit, autoRollback, timeout } = options
 	const client = await pool.connect()
-	client.query('BEGIN')
-	let returnValue
+
+	const transactionId = await inTransaction(client)
+
+	await begin(client, transactionId)
+	let returnValue, clientReleased = false
 	try {
 		returnValue = await func(client)
+	} catch (e) {
+		try {
+			await rollback(client, transactionId)
+		} catch (e) {
+			console.error(e)
+		} finally {
+			releaseClient(client, clientReleased)
+		}
+		throw e
 	} finally {
 		if (autoRollback) {
-			client.query('ROLLBACK')
-			client.release()
+			try {
+				await rollback(client, transactionId)
+			} finally {
+				releaseClient(client, clientReleased)
+			}
 			return { returnValue }
 		} else if (autoCommit) {
-			client.query('COMMIT')
-			client.release()
+			try {
+				await commit(client, transactionId)
+			} finally {
+				releaseClient(client, clientReleased)
+			}
 			return { returnValue }
 		} else {
-			client.release()
+			const timeOut = setTimeout(() => {
+				releaseClient(client, clientReleased)
+				throw new Error('Transaction timed out')
+			}, timeout)
 			return {
 				returnValue,
 				commit: async () => {
 					try {
-						client.query('COMMIT')
+						await commit(client, transactionId)
+						clearTimeout(timeOut)
 						return returnValue
 					} catch (e) {
-						client.query('ROLLBACK')
+						await rollback(client, transactionId)
 						throw e
 					} finally {
-						client.release()
+						clearTimeout(timeOut)
+						releaseClient(client, clientReleased)
 					}
 				},
 				rollback: async () => {
 					try {
-						client.query('ROLLBACK')
+						await rollback(client, transactionId)
+						clearTimeout(timeOut)
 						return returnValue
 					} catch (e) {
 						throw e
 					} finally {
-						client.release()
+						clearTimeout(timeOut)
+						releaseClient(client, clientReleased)
 					}
 				}
 			}
