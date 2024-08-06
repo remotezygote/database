@@ -76,7 +76,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 		} catch (e) {
 			console.error(e)
 		} finally {
-			releaseClient(client, clientReleased)
+			clientReleased = releaseClient(client, clientReleased)
 		}
 		throw e
 	} finally {
@@ -84,19 +84,19 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 			try {
 				await rollback(client, transactionId)
 			} finally {
-				releaseClient(client, clientReleased)
+				clientReleased = releaseClient(client, clientReleased)
 			}
 			return { returnValue }
 		} else if (autoCommit) {
 			try {
 				await commit(client, transactionId)
 			} finally {
-				releaseClient(client, clientReleased)
+				clientReleased = releaseClient(client, clientReleased)
 			}
 			return { returnValue }
 		} else {
 			const timeOut = setTimeout(() => {
-				releaseClient(client, clientReleased)
+				clientReleased = releaseClient(client, clientReleased)
 				throw new Error('Transaction timed out')
 			}, timeout)
 			return {
@@ -111,7 +111,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 						throw e
 					} finally {
 						clearTimeout(timeOut)
-						releaseClient(client, clientReleased)
+						clientReleased = releaseClient(client, clientReleased)
 					}
 				},
 				rollback: async () => {
@@ -123,7 +123,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 						throw e
 					} finally {
 						clearTimeout(timeOut)
-						releaseClient(client, clientReleased)
+						clientReleased = releaseClient(client, clientReleased)
 					}
 				}
 			}
