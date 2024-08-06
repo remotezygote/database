@@ -21,6 +21,14 @@ export const withDatabaseClient = async (func: Function) => {
 	}
 }
 
+export const releaseClient = (client: pg.PoolClient, clientReleased: boolean = false) => {
+	if (!clientReleased) {
+		client.release()
+		clientReleased = true
+	}
+	return clientReleased
+}
+
 export interface WithTransactionOptions {
 	autoCommit?: boolean
 	autoRollback?: boolean
@@ -59,7 +67,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 	const transactionId = await inTransaction(client)
 
 	await begin(client, transactionId)
-	let returnValue
+	let returnValue, clientReleased = false
 	try {
 		returnValue = await func(client)
 	} catch (e) {
@@ -68,7 +76,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 		} catch (e) {
 			console.error(e)
 		} finally {
-			client.release()
+			releaseClient(client, clientReleased)
 		}
 		throw e
 	} finally {
@@ -76,19 +84,19 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 			try {
 				await rollback(client, transactionId)
 			} finally {
-				client.release()
+				releaseClient(client, clientReleased)
 			}
 			return { returnValue }
 		} else if (autoCommit) {
 			try {
 				await commit(client, transactionId)
 			} finally {
-				client.release()
+				releaseClient(client, clientReleased)
 			}
 			return { returnValue }
 		} else {
 			const timeOut = setTimeout(() => {
-				client.release()
+				releaseClient(client, clientReleased)
 				throw new Error('Transaction timed out')
 			}, timeout)
 			return {
@@ -103,7 +111,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 						throw e
 					} finally {
 						clearTimeout(timeOut)
-						client.release()
+						releaseClient(client, clientReleased)
 					}
 				},
 				rollback: async () => {
@@ -115,7 +123,7 @@ export const withTransaction = async (func: Function, options: WithTransactionOp
 						throw e
 					} finally {
 						clearTimeout(timeOut)
-						client.release()
+						releaseClient(client, clientReleased)
 					}
 				}
 			}
