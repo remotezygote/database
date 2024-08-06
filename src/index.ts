@@ -45,7 +45,7 @@ export const inTransaction = async (client: pg.PoolClient) => {
 	const { rows } = await client.query(
 		`SELECT 
 			pg_current_xact_id_if_assigned() IS NOT NULL AS inTransaction,
-			replace(gen_random_uuid()::text, '-', '_') AS transactionId`
+			'trx_' || replace(gen_random_uuid()::text, '-', '_') AS transactionId`
 	)
 	const { intransaction: inTransaction, transactionid: transactionId } = rows[0]
 	
