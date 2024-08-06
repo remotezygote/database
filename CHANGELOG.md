@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.19](https://github.com/remotezygote/database/compare/v1.2.18...v1.2.19) (2024-08-06)
+
+
+### Bug Fixes
+
+* properly release clients ([5233cdb](https://github.com/remotezygote/database/commit/5233cdb0c1304ea1d024fb4b1d445227d5b05f89))
+
 ### [1.2.18](https://github.com/remotezygote/database/compare/v1.2.18-alpha.5...v1.2.18) (2024-08-06)
 
 ### [1.2.18-alpha.5](https://github.com/remotezygote/database/compare/v1.2.18-alpha.4...v1.2.18-alpha.5) (2024-08-06)
